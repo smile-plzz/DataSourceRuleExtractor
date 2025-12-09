@@ -3,282 +3,270 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rebuy Rule Extractor (File or Paste)</title>
+    <title>Rebuy Rule Extractor (Robust)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .rule-card { transition: all 0.2s; }
-        .rule-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
-        /* Custom scrollbar for textarea */
-        textarea::-webkit-scrollbar { width: 8px; }
-        textarea::-webkit-scrollbar-track { background: #f1f5f9; }
-        textarea::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        textarea::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .rule-card { border-left: 4px solid #3b82f6; }
+        .rule-card:hover { transform: translateX(2px); }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800 min-h-screen p-6 md:p-12">
+<body class="text-gray-800 p-6 md:p-12">
 
-    <div class="max-w-5xl mx-auto">
+    <div class="max-w-6xl mx-auto">
         
-        <div class="mb-8 text-center">
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">Rebuy Rule Extractor</h1>
-            <p class="text-gray-500">Extract "IF / THEN" rules from Rebuy source code.</p>
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">Rebuy Rule Extractor</h1>
+            <p class="text-gray-500 mt-2">Extracts rules from large Rebuy source files using robust parsing.</p>
         </div>
 
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 md:p-8 mb-8">
-            
-            <div class="flex border-b border-gray-200 mb-6">
-                <button onclick="switchTab('file')" id="tab-file" class="pb-3 px-4 text-sm font-semibold text-blue-600 border-b-2 border-blue-600 transition-colors">
-                    Upload File
-                </button>
-                <button onclick="switchTab('paste')" id="tab-paste" class="pb-3 px-4 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors">
-                    Paste Text
-                </button>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+            <div class="flex gap-4 mb-4 border-b border-gray-100 pb-4">
+                <button onclick="setMode('file')" id="btn-file" class="text-blue-600 font-bold border-b-2 border-blue-600 pb-1">Upload File</button>
+                <button onclick="setMode('paste')" id="btn-paste" class="text-gray-500 font-medium pb-1 hover:text-blue-600">Paste Text</button>
             </div>
 
-            <div id="panel-file" class="block">
-                <label class="flex flex-col items-center justify-center w-full h-40 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+            <div id="mode-file" class="block">
+                <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
                     <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                        <svg class="w-10 h-10 mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                        <svg class="w-8 h-8 mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
                         <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Click to upload</span> or drag and drop</p>
-                        <p class="text-xs text-gray-500">Rebuy HTML or JSON files</p>
+                        <p class="text-xs text-gray-500">Supports .txt, .html</p>
                     </div>
                     <input id="fileInput" type="file" class="hidden" />
                 </label>
             </div>
 
-            <div id="panel-paste" class="hidden">
-                <textarea id="pasteInput" class="w-full h-40 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs font-mono text-gray-600 bg-gray-50" placeholder="Paste your Rebuy source code or JSON here..."></textarea>
-                <button onclick="handlePaste()" class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">
-                    Process Pasted Text
-                </button>
+            <div id="mode-paste" class="hidden">
+                <textarea id="pasteArea" class="w-full h-64 p-4 border border-gray-300 rounded-lg font-mono text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Paste your code here..."></textarea>
+                <button onclick="processPaste()" class="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors">Process Text</button>
             </div>
 
-            <div id="statusMsg" class="mt-4 text-center text-sm font-medium hidden"></div>
+            <div id="status" class="mt-4 font-medium text-sm hidden"></div>
         </div>
 
-        <div id="outputSection" class="hidden">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-bold text-gray-900">Extracted Rules (<span id="ruleCount">0</span>)</h2>
-                <div class="flex gap-2">
-                    <button onclick="copyToClipboard('text')" class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded text-sm font-medium transition-colors shadow-sm">
-                        Copy Text
-                    </button>
-                    <button onclick="copyToClipboard('csv')" class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded text-sm font-medium transition-colors shadow-sm">
-                        Copy CSV
-                    </button>
-                </div>
+        <div id="toolbar" class="hidden flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold">Rules Found: <span id="ruleCount" class="text-blue-600">0</span></h2>
+            <div class="flex gap-2">
+                <button onclick="copyResults('text')" class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition-colors">Copy Text</button>
+                <button onclick="copyResults('csv')" class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition-colors">Copy CSV</button>
             </div>
-
-            <div id="rulesContainer" class="space-y-4">
-                </div>
         </div>
-        
+
+        <div id="output" class="space-y-4 hidden"></div>
+
     </div>
 
     <script>
-        const fileInput = document.getElementById('fileInput');
-        const pasteInput = document.getElementById('pasteInput');
-        const statusMsg = document.getElementById('statusMsg');
-        const outputSection = document.getElementById('outputSection');
-        const rulesContainer = document.getElementById('rulesContainer');
-        const ruleCount = document.getElementById('ruleCount');
+        // --- State ---
+        let rulesData = [];
 
-        let globalRules = [];
-
-        // --- Tabs Logic ---
-        function switchTab(tab) {
-            const btnFile = document.getElementById('tab-file');
-            const btnPaste = document.getElementById('tab-paste');
-            const panelFile = document.getElementById('panel-file');
-            const panelPaste = document.getElementById('panel-paste');
-
-            if (tab === 'file') {
-                btnFile.classList.add('text-blue-600', 'border-blue-600');
-                btnFile.classList.remove('text-gray-500', 'border-transparent');
-                btnPaste.classList.remove('text-blue-600', 'border-blue-600');
-                btnPaste.classList.add('text-gray-500', 'border-transparent');
-                
-                panelFile.classList.remove('hidden');
-                panelPaste.classList.add('hidden');
+        // --- UI Logic ---
+        function setMode(mode) {
+            document.getElementById('mode-file').classList.toggle('hidden', mode !== 'file');
+            document.getElementById('mode-paste').classList.toggle('hidden', mode !== 'paste');
+            
+            const btnFile = document.getElementById('btn-file');
+            const btnPaste = document.getElementById('btn-paste');
+            
+            if(mode === 'file') {
+                btnFile.className = "text-blue-600 font-bold border-b-2 border-blue-600 pb-1";
+                btnPaste.className = "text-gray-500 font-medium pb-1 hover:text-blue-600";
             } else {
-                btnPaste.classList.add('text-blue-600', 'border-blue-600');
-                btnPaste.classList.remove('text-gray-500', 'border-transparent');
-                btnFile.classList.remove('text-blue-600', 'border-blue-600');
-                btnFile.classList.add('text-gray-500', 'border-transparent');
-                
-                panelPaste.classList.remove('hidden');
-                panelFile.classList.add('hidden');
+                btnPaste.className = "text-blue-600 font-bold border-b-2 border-blue-600 pb-1";
+                btnFile.className = "text-gray-500 font-medium pb-1 hover:text-blue-600";
             }
-            // Clear status when switching
-            statusMsg.classList.add('hidden');
         }
 
         // --- Event Listeners ---
-        fileInput.addEventListener('change', (e) => {
+        document.getElementById('fileInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
 
-            setStatus('Processing file...', 'blue');
+            showStatus("Reading file...", "text-blue-600");
+            
             const reader = new FileReader();
-            reader.onload = (event) => processContent(event.target.result);
+            reader.onload = function(e) {
+                processContent(e.target.result);
+            };
             reader.readAsText(file);
         });
 
-        function handlePaste() {
-            const text = pasteInput.value;
-            if (!text.trim()) {
-                setStatus('Please paste some text first.', 'red');
-                return;
-            }
-            setStatus('Processing text...', 'blue');
-            processContent(text);
+        function processPaste() {
+            const content = document.getElementById('pasteArea').value;
+            if(!content.trim()) return showStatus("Please paste some text first.", "text-red-600");
+            processContent(content);
         }
 
-        // --- Core Parsing Logic ---
+        function showStatus(msg, colorClass) {
+            const el = document.getElementById('status');
+            el.textContent = msg;
+            el.className = `mt-4 font-medium text-sm block ${colorClass}`;
+        }
+
+        // --- The Robust Parser ---
         function processContent(content) {
+            showStatus("Analyzing content...", "text-blue-600");
+
+            let dataSource = null;
+
             try {
-                let dataSource = null;
-                
-                // 1. Try finding 'data.data_source = { ... }' (Standard Rebuy HTML)
-                const regexHTML = /data\.data_source\s*=\s*(\{[\s\S]*?\});/;
-                const matchHTML = content.match(regexHTML);
+                // 1. Try "Brace Counting" extraction for 'data.data_source ='
+                // This is robust against large files where Regex fails.
+                const searchStr = "data.data_source =";
+                const startIndex = content.indexOf(searchStr);
 
-                // 2. Try finding 'window.data = { ... }'
-                const regexWindow = /window\.data\s*=\s*(\{[\s\S]*?\});/;
-                const matchWindow = content.match(regexWindow);
+                if (startIndex !== -1) {
+                    // Find the first '{' after the assignment
+                    let openBraceIndex = content.indexOf('{', startIndex);
+                    if (openBraceIndex !== -1) {
+                        let braceCount = 1;
+                        let i = openBraceIndex + 1;
+                        
+                        // Loop until braces match up
+                        while (braceCount > 0 && i < content.length) {
+                            if (content[i] === '{') braceCount++;
+                            else if (content[i] === '}') braceCount--;
+                            i++;
+                        }
 
-                if (matchHTML && matchHTML[1]) {
-                    dataSource = JSON.parse(matchHTML[1]);
-                } else if (matchWindow && matchWindow[1]) {
-                    const dataObj = JSON.parse(matchWindow[1]);
-                    dataSource = dataObj.data_source || dataObj;
-                } else {
-                    // 3. Try parsing the whole string as JSON
-                    try {
-                        const json = JSON.parse(content);
-                        dataSource = json.data_source || json;
-                    } catch (e) {
-                        // ignore
+                        if (braceCount === 0) {
+                            const jsonString = content.substring(openBraceIndex, i);
+                            dataSource = JSON.parse(jsonString);
+                        }
                     }
                 }
-
-                if (!dataSource || !dataSource.rules) {
-                    throw new Error("Could not find 'rules' or 'data.data_source' pattern in the text.");
+                
+                // 2. Fallback: Try parsing the whole file as JSON
+                if (!dataSource) {
+                    try {
+                        dataSource = JSON.parse(content);
+                    } catch(e) {}
                 }
 
-                // Parse Rules
-                globalRules = dataSource.rules.map((rule, idx) => {
-                    const inputs = getProducts(rule.logic, true);
-                    const outputs = getProducts(rule.output, false);
-                    return { index: idx + 1, inputs, outputs };
-                });
-
-                renderRules();
-                setStatus('Success! Rules extracted.', 'green');
+                if (dataSource && (dataSource.rules || (dataSource.data_source && dataSource.data_source.rules))) {
+                    const rules = dataSource.rules || dataSource.data_source.rules;
+                    renderRules(rules);
+                    showStatus("Successfully extracted rules!", "text-green-600");
+                } else {
+                    showStatus("Could not find 'data.data_source' configuration. Ensure you uploaded the correct Source Code file.", "text-red-600");
+                }
 
             } catch (err) {
                 console.error(err);
-                setStatus('Error: ' + err.message, 'red');
-                outputSection.classList.add('hidden');
+                showStatus("Error parsing file: " + err.message, "text-red-600");
             }
         }
 
-        function getProducts(block, isLogic) {
-            let list = [];
-            if (!block) return list;
+        // --- Rendering ---
+        function renderRules(rules) {
+            const container = document.getElementById('output');
+            container.innerHTML = '';
+            rulesData = []; // Reset global data
 
-            block.forEach(group => {
-                // If Logic: look inside 'rules' -> 'products'
-                if (isLogic && group.rules) {
-                    group.rules.forEach(r => {
-                        if (r.products) {
-                            r.products.forEach(p => list.push({
-                                id: p.product_id,
-                                title: p.json?.title || "Unknown"
-                            }));
-                        }
-                    });
-                }
-                // If Output: look inside 'products'
-                else if (!isLogic) {
-                    if (group.products) {
-                        group.products.forEach(p => list.push({
-                            id: p.product_id,
-                            title: p.json?.title || "Unknown"
-                        }));
-                    }
-                }
-            });
-            return list;
-        }
-
-        // --- Rendering & Utilities ---
-        function renderRules() {
-            rulesContainer.innerHTML = '';
-            ruleCount.innerText = globalRules.length;
-            outputSection.classList.remove('hidden');
-
-            if (globalRules.length === 0) {
-                rulesContainer.innerHTML = '<div class="text-gray-400 italic text-center">No rules found.</div>';
+            if (!rules.length) {
+                container.innerHTML = '<div class="text-center text-gray-500">No rules found.</div>';
                 return;
             }
 
-            globalRules.forEach(rule => {
-                const div = document.createElement('div');
-                div.className = "rule-card bg-white p-4 rounded-lg border border-gray-200 flex flex-col md:flex-row gap-4";
+            rules.forEach((rule, index) => {
+                // Extract Inputs
+                const inputs = [];
+                if (rule.logic) {
+                    rule.logic.forEach(group => {
+                        if (group.rules) {
+                            group.rules.forEach(r => {
+                                // Extract Trigger Products
+                                if (r.products) {
+                                    r.products.forEach(p => {
+                                        inputs.push({
+                                            id: p.product_id,
+                                            title: p.json?.title || "Unknown Product"
+                                        });
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
+
+                // Extract Outputs
+                const outputs = [];
+                if (rule.output) {
+                    rule.output.forEach(out => {
+                        // Extract Return Products
+                        if (out.products) {
+                            out.products.forEach(p => {
+                                outputs.push({
+                                    id: p.product_id,
+                                    title: p.json?.title || "Unknown Product"
+                                });
+                            });
+                        }
+                    });
+                }
+
+                // Save to state
+                rulesData.push({ id: index + 1, inputs, outputs });
+
+                // Render Card
+                const card = document.createElement('div');
+                card.className = "rule-card bg-white p-6 rounded-lg shadow-sm border border-gray-200 transition-all duration-200";
                 
-                // Inputs HTML
-                const inputsHtml = rule.inputs.length > 0 
-                    ? rule.inputs.map(p => `<div class="text-sm font-medium text-blue-700">IF ${p.title} <span class="text-xs text-gray-400">(${p.id})</span></div>`).join('')
-                    : `<div class="text-sm text-gray-400 italic">IF Anything (Global)</div>`;
+                const inputHTML = inputs.length 
+                    ? inputs.map(i => `<div class="text-blue-700 font-medium">IF ${i.title} <span class="text-gray-400 text-xs">(${i.id})</span></div>`).join('') 
+                    : `<div class="text-gray-400 italic">IF Anything (Global Rule)</div>`;
 
-                // Outputs HTML
-                const outputsHtml = rule.outputs.length > 0
-                    ? rule.outputs.map(p => `<div class="text-sm font-medium text-green-700">RETURN ${p.title} <span class="text-xs text-gray-400">(${p.id})</span></div>`).join('')
-                    : `<div class="text-sm text-gray-400 italic">No Return</div>`;
+                const outputHTML = outputs.length 
+                    ? outputs.map(o => `<div class="text-green-700 font-medium">RETURN ${o.title} <span class="text-gray-400 text-xs">(${o.id})</span></div>`).join('') 
+                    : `<div class="text-gray-400 italic">No return action</div>`;
 
-                div.innerHTML = `
-                    <div class="md:w-16 pt-0.5">
-                        <span class="inline-block bg-gray-100 text-gray-500 text-xs font-bold px-2 py-1 rounded">#${rule.index}</span>
+                card.innerHTML = `
+                    <div class="flex flex-col md:flex-row gap-4">
+                        <div class="md:w-16 flex-shrink-0 pt-1">
+                            <span class="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-1 rounded">#${index + 1}</span>
+                        </div>
+                        <div class="flex-1 space-y-2">
+                            ${inputHTML}
+                        </div>
+                        <div class="flex items-center justify-center text-gray-300 px-4">
+                            <svg class="w-6 h-6 transform rotate-90 md:rotate-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                        </div>
+                        <div class="flex-1 space-y-2">
+                            ${outputHTML}
+                        </div>
                     </div>
-                    <div class="flex-1 space-y-1">${inputsHtml}</div>
-                    <div class="hidden md:flex items-center text-gray-300">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                    </div>
-                    <div class="flex-1 space-y-1">${outputsHtml}</div>
                 `;
-                rulesContainer.appendChild(div);
+
+                container.appendChild(card);
             });
+
+            document.getElementById('ruleCount').innerText = rules.length;
+            document.getElementById('toolbar').classList.remove('hidden');
+            container.classList.remove('hidden');
         }
 
-        function setStatus(msg, color) {
-            statusMsg.textContent = msg;
-            statusMsg.classList.remove('hidden', 'text-red-600', 'text-green-600', 'text-blue-600');
-            statusMsg.classList.add(`text-${color}-600`);
-        }
-
-        function copyToClipboard(mode) {
+        // --- Copy Logic ---
+        function copyResults(format) {
             let text = "";
-            if (mode === 'csv') {
-                text = "Rule,Type,Product Name,Product ID\n";
-                globalRules.forEach(r => {
-                    r.inputs.forEach(p => text += `${r.index},IF,"${p.title.replace(/"/g, '""')}",${p.id}\n`);
-                    r.outputs.forEach(p => text += `${r.index},RETURN,"${p.title.replace(/"/g, '""')}",${p.id}\n`);
+            if (format === 'csv') {
+                text = "Rule ID,Type,Product Name,Product ID\n";
+                rulesData.forEach(r => {
+                    r.inputs.forEach(i => text += `${r.id},IF,"${i.title.replace(/"/g, '""')}",${i.id}\n`);
+                    r.outputs.forEach(o => text += `${r.id},RETURN,"${o.title.replace(/"/g, '""')}",${o.id}\n`);
                 });
             } else {
-                globalRules.forEach(r => {
-                    text += `RULE ${r.index}\n`;
-                    r.inputs.forEach(p => text += `  IF: ${p.title} (${p.id})\n`);
-                    r.outputs.forEach(p => text += `  RETURN: ${p.title} (${p.id})\n`);
+                rulesData.forEach(r => {
+                    text += `RULE #${r.id}\n`;
+                    if(r.inputs.length === 0) text += `  IF: Anything\n`;
+                    r.inputs.forEach(i => text += `  IF: ${i.title} (${i.id})\n`);
+                    r.outputs.forEach(o => text += `  RETURN: ${o.title} (${o.id})\n`);
                     text += "\n";
                 });
             }
             
-            navigator.clipboard.writeText(text).then(() => {
-                alert("Copied to clipboard!");
-            });
+            navigator.clipboard.writeText(text).then(() => alert("Copied to clipboard!"));
         }
     </script>
 </body>
