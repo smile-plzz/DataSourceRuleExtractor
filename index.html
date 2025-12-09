@@ -3,204 +3,317 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rebuy to Dynamatic Importer</title>
+    <title>Rebuy Master Migration Tool</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
-        .json-output { font-family: 'Menlo', 'Monaco', 'Courier New', monospace; font-size: 11px; line-height: 1.5; }
-        /* Custom Scrollbar */
-        textarea::-webkit-scrollbar { width: 8px; }
-        textarea::-webkit-scrollbar-track { background: #1e293b; }
-        textarea::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        
+        /* Table Styles */
+        .mig-table th { background: #1e293b; color: #fff; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em; padding: 12px 16px; position: sticky; top: 0; z-index: 10; }
+        .mig-table td { vertical-align: top; padding: 16px; border-bottom: 1px solid #e2e8f0; }
+        .mig-table tr:hover td { background-color: #f8fafc; }
+        
+        /* Badges */
+        .badge-id { font-family: 'Courier New', monospace; background: #e2e8f0; color: #475569; padding: 2px 6px; border-radius: 4px; font-size: 10px; }
+        .badge-handle { font-family: 'Courier New', monospace; background: #ffedd5; color: #c2410c; padding: 2px 6px; border-radius: 4px; font-size: 10px; }
+        
+        /* Scrollbars */
+        .custom-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        
+        /* Tab Active State */
+        .tab-active { border-bottom: 2px solid #2563eb; color: #2563eb; font-weight: 600; }
+        .tab-inactive { border-bottom: 2px solid transparent; color: #64748b; }
+        .tab-inactive:hover { color: #334155; }
     </style>
 </head>
-<body class="p-6 md:p-10 text-slate-800 h-screen flex flex-col">
+<body class="h-screen flex flex-col overflow-hidden text-slate-800">
 
-    <div class="max-w-7xl mx-auto w-full flex-1 flex flex-col">
-        
-        <div class="mb-6 flex justify-between items-center">
-            <div>
-                <h1 class="text-2xl font-bold text-slate-900 flex items-center gap-2">
-                    <i class="ph-fill ph-arrows-left-right text-blue-600"></i>
-                    Rebuy to Dynamatic Converter
-                </h1>
-                <p class="text-sm text-slate-500 mt-1">Converts Rebuy source code into a JSON file ready for import.</p>
-            </div>
-            <div id="statusTag" class="hidden px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold items-center gap-1">
-                <i class="ph-bold ph-check"></i> Converted
-            </div>
+    <div class="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center flex-shrink-0">
+        <div>
+            <h1 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+                <i class="ph-fill ph-toolbox text-blue-600"></i>
+                Rebuy Master Migration Tool
+            </h1>
+            <p class="text-xs text-slate-500">View Rules, Copy Data, and Export to Dynamatic</p>
         </div>
+        <div id="statusTag" class="hidden px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold items-center gap-1">
+            <i class="ph-bold ph-check"></i> Data Loaded
+        </div>
+    </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1 min-h-0">
-            
-            <div class="flex flex-col h-full bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-                <div class="flex justify-between items-center mb-3">
-                    <h2 class="font-bold text-slate-700 text-sm uppercase tracking-wide">1. Source Code</h2>
-                    <span class="text-xs text-slate-400">Paste file.txt / HTML</span>
-                </div>
-                <textarea id="inputArea" class="flex-1 w-full p-4 border border-slate-200 rounded-lg text-xs font-mono focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none resize-none bg-slate-50 text-slate-600" placeholder="Paste the Rebuy source code here..."></textarea>
-                <div class="mt-4">
-                    <button onclick="convertData()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-sm">
-                        <i class="ph-bold ph-magic-wand"></i> Convert to Dynamatic Format
+    <div class="flex-1 flex overflow-hidden">
+        
+        <div class="w-1/3 min-w-[350px] max-w-[500px] bg-white border-r border-slate-200 flex flex-col z-20 shadow-lg">
+            <div class="p-4 border-b border-slate-100 bg-slate-50">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">1. Input Source</h2>
+                <div class="flex gap-2 mb-2">
+                    <label class="flex-1 cursor-pointer bg-white border border-slate-300 hover:border-blue-400 rounded px-3 py-2 text-center text-xs font-medium transition-colors">
+                        <input type="file" id="fileInput" class="hidden" />
+                        <i class="ph-bold ph-upload-simple"></i> Upload File
+                    </label>
+                    <button onclick="processInput()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded px-3 py-2 text-xs font-bold transition-colors">
+                        <i class="ph-bold ph-play"></i> Process
                     </button>
                 </div>
             </div>
-
-            <div class="flex flex-col h-full bg-slate-900 p-5 rounded-xl shadow-lg border border-slate-700">
-                <div class="flex justify-between items-center mb-3">
-                    <h2 class="font-bold text-slate-100 text-sm uppercase tracking-wide">2. Import JSON</h2>
-                    <div class="flex gap-2">
-                        <button onclick="copyOutput()" class="text-xs font-medium text-slate-400 hover:text-white transition-colors flex items-center gap-1 px-2 py-1 hover:bg-slate-800 rounded">
-                            <i class="ph-bold ph-copy"></i> Copy Text
-                        </button>
-                        <button onclick="downloadOutput()" id="dlBtn" disabled class="text-xs font-bold text-white bg-green-600 hover:bg-green-700 transition-colors flex items-center gap-1 px-3 py-1 rounded disabled:opacity-50 disabled:cursor-not-allowed">
-                            <i class="ph-bold ph-download-simple"></i> Download .json
-                        </button>
-                    </div>
-                </div>
-                <textarea id="outputArea" readonly class="flex-1 w-full p-4 border border-slate-700 rounded-lg json-output focus:outline-none resize-none bg-slate-950 text-green-400" placeholder="// JSON output will appear here..."></textarea>
-            </div>
+            <textarea id="pasteInput" class="flex-1 p-4 text-xs font-mono resize-none focus:outline-none bg-slate-50 text-slate-600" placeholder="Paste source code here..."></textarea>
         </div>
 
+        <div class="flex-1 flex flex-col bg-slate-50 min-w-0">
+            
+            <div class="flex border-b border-slate-200 bg-white px-4">
+                <button onclick="switchTab('table')" id="btn-tab-table" class="tab-active px-4 py-3 text-sm flex items-center gap-2">
+                    <i class="ph-bold ph-table"></i> Visual Table
+                </button>
+                <button onclick="switchTab('json')" id="btn-tab-json" class="tab-inactive px-4 py-3 text-sm flex items-center gap-2">
+                    <i class="ph-bold ph-code"></i> Dynamatic JSON
+                </button>
+            </div>
+
+            <div id="view-table" class="flex-1 overflow-auto custom-scroll p-6">
+                <div class="bg-white rounded-lg shadow border border-slate-200 overflow-hidden">
+                    <table class="w-full text-left border-collapse mig-table">
+                        <thead>
+                            <tr>
+                                <th class="w-12">#</th>
+                                <th class="w-[45%]">IF (Trigger)</th>
+                                <th class="w-[45%]">THEN (Return)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <tr><td colspan="3" class="text-center p-8 text-slate-400 italic">Waiting for data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="view-json" class="hidden flex-1 flex flex-col p-6 h-full">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="font-bold text-slate-700 text-sm">Dynamatic Feed Preview</h3>
+                    <button onclick="downloadJSON()" id="dlBtn" disabled class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors">
+                        <i class="ph-bold ph-download-simple"></i> Download .json
+                    </button>
+                </div>
+                <textarea id="jsonOutput" readonly class="flex-1 w-full p-4 rounded-lg border border-slate-300 font-mono text-xs bg-slate-900 text-green-400 focus:outline-none custom-scroll resize-none" placeholder="// Converted JSON will appear here..."></textarea>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="toast" class="fixed bottom-6 right-6 bg-slate-800 text-white px-4 py-2 rounded shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none z-50 text-xs font-bold flex items-center gap-2">
+        <i class="ph-bold ph-check"></i> <span id="toastMsg">Copied!</span>
     </div>
 
     <script>
-        // --- UUID Generator for Dynamatic IDs ---
-        function uuidv4() {
-            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-                return v.toString(16);
-            });
+        // --- State ---
+        let currentData = null;
+
+        // --- UI Logic ---
+        function switchTab(tab) {
+            document.getElementById('view-table').classList.toggle('hidden', tab !== 'table');
+            document.getElementById('view-json').classList.toggle('hidden', tab !== 'json');
+            
+            const tBtn = document.getElementById('btn-tab-table');
+            const jBtn = document.getElementById('btn-tab-json');
+            
+            if(tab === 'table') {
+                tBtn.classList.add('tab-active'); tBtn.classList.remove('tab-inactive');
+                jBtn.classList.add('tab-inactive'); jBtn.classList.remove('tab-active');
+            } else {
+                jBtn.classList.add('tab-active'); jBtn.classList.remove('tab-inactive');
+                tBtn.classList.add('tab-inactive'); tBtn.classList.remove('tab-active');
+            }
         }
 
-        // --- Core Conversion Logic ---
-        function convertData() {
-            const input = document.getElementById('inputArea').value;
-            const statusTag = document.getElementById('statusTag');
-            const dlBtn = document.getElementById('dlBtn');
+        // --- Input Handling ---
+        document.getElementById('fileInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => processContent(ev.target.result);
+            reader.readAsText(file);
+        });
 
-            if (!input.trim()) return alert("Please paste the source code first.");
+        function processInput() {
+            const text = document.getElementById('pasteInput').value;
+            if(!text.trim()) return alert("Please paste content.");
+            processContent(text);
+        }
 
+        // --- Core Parsing ---
+        function processContent(content) {
             try {
-                // 1. Robust Extraction of Rebuy Data
                 let dataSource = null;
                 const marker = "data.data_source =";
-                const idx = input.indexOf(marker);
-                
+                const idx = content.indexOf(marker);
+
                 if (idx !== -1) {
+                    // Robust Brace Counting
                     let open = 0, start = -1, found = false;
-                    for (let i = idx; i < input.length; i++) {
-                        if (input[i] === '{') {
+                    for (let i = idx; i < content.length; i++) {
+                        if (content[i] === '{') {
                             if (!found) { start = i; found = true; }
                             open++;
-                        } else if (input[i] === '}') {
+                        } else if (content[i] === '}') {
                             open--;
                         }
                         if (found && open === 0) {
-                            // Safe evaluation of JS object to handle unquoted keys
-                            const objStr = input.substring(start, i + 1);
+                            const objStr = content.substring(start, i + 1);
                             dataSource = new Function("return " + objStr)();
                             break;
                         }
                     }
                 } else {
-                    // Fallback for direct JSON paste
-                    try { dataSource = JSON.parse(input); } catch(e) {}
+                    // Fallback JSON
+                    try { dataSource = JSON.parse(content); } catch(e) {}
                 }
 
                 if (!dataSource || (!dataSource.rules && !dataSource.data_source?.rules)) {
-                    throw new Error("Could not find 'rules' in the provided text. Make sure you pasted the full source.");
+                    throw new Error("Could not find 'rules' or 'data_source'. Check file.");
                 }
 
-                const rebuyRules = dataSource.rules || dataSource.data_source.rules;
+                currentData = dataSource.rules || dataSource.data_source.rules;
                 
-                // 2. Map to Dynamatic Schema
-                const dynamaticFeed = {
-                    "status": 200,
-                    "message": "Converted successfully via Tool",
-                    "rule_feed": {
-                        "id": parseInt(dataSource.id) || Math.floor(Math.random() * 1000),
-                        "shop_url": "imported-shop.myshopify.com", 
-                        "name": dataSource.name || "Rebuy Import Feed",
-                        "filter_out_stock_product": 0,
-                        "filter_out_stock_variant": 0,
-                        "filter_input_product": 0,
-                        "execution_filters": [],
-                        "rules": rebuyRules.map(transformRule)
-                    }
-                };
-
-                // 3. Output Result
-                const finalJSON = JSON.stringify(dynamaticFeed, null, 4);
-                document.getElementById('outputArea').value = finalJSON;
+                // Render Views
+                renderTable(currentData);
+                generateDynamaticJSON(dataSource);
                 
-                // UI Updates
-                statusTag.classList.remove('hidden');
-                statusTag.classList.add('flex');
-                dlBtn.removeAttribute('disabled');
+                document.getElementById('statusTag').classList.remove('hidden');
+                document.getElementById('statusTag').classList.add('flex');
 
             } catch (err) {
                 console.error(err);
-                alert("Conversion Error: " + err.message);
+                alert("Error: " + err.message);
             }
+        }
+
+        // --- 1. Table Render Logic ---
+        function renderTable(rules) {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            rules.forEach((rule, index) => {
+                const tr = document.createElement('tr');
+                
+                const logicHTML = getProductHTML(rule.logic, true);
+                const outputHTML = getProductHTML(rule.output, false);
+
+                tr.innerHTML = `
+                    <td class="font-bold text-slate-400 text-xs">#${index+1}</td>
+                    <td>${logicHTML || '<span class="text-slate-400 italic text-xs">Global Rule</span>'}</td>
+                    <td>${outputHTML || '<span class="text-slate-400 italic text-xs">No Action</span>'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function getProductHTML(block, isLogic) {
+            if(!block) return '';
+            let html = '';
+            
+            block.forEach(group => {
+                const subList = group.rules || (group.products ? [group] : []);
+                subList.forEach(item => {
+                    if(item.products) {
+                        item.products.forEach(p => {
+                            const title = p.json?.title || "Unknown";
+                            const id = p.product_id;
+                            const handle = p.json?.handle || "no-handle";
+                            
+                            // Escape quotes for onclick
+                            const safeTitle = title.replace(/"/g, '&quot;').replace(/'/g, "\\'");
+                            
+                            html += `
+                                <div class="bg-white border border-slate-200 rounded p-3 mb-2 shadow-sm group hover:border-blue-300 transition-colors">
+                                    <div class="flex justify-between items-start mb-1">
+                                        <div class="font-semibold text-sm text-slate-700 leading-tight">${title}</div>
+                                        <button onclick="copyToClip('${safeTitle}', 'Title')" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-blue-600 ml-2" title="Copy Title"><i class="ph-bold ph-copy"></i></button>
+                                    </div>
+                                    
+                                    <div class="flex flex-wrap gap-2 mt-2">
+                                        <div class="flex items-center gap-1 bg-slate-100 rounded px-1.5 py-0.5">
+                                            <span class="text-[10px] font-bold text-slate-500 uppercase">ID</span>
+                                            <span class="badge-id">${id}</span>
+                                            <button onclick="copyToClip('${id}', 'ID')" class="text-slate-400 hover:text-blue-600 text-[10px]"><i class="ph-bold ph-copy"></i></button>
+                                        </div>
+                                        
+                                        <div class="flex items-center gap-1 bg-orange-50 rounded px-1.5 py-0.5">
+                                            <span class="text-[10px] font-bold text-orange-700 uppercase">Handle</span>
+                                            <span class="badge-handle truncate max-w-[150px]">${handle}</span>
+                                            <button onclick="copyToClip('${handle}', 'Handle')" class="text-slate-400 hover:text-blue-600 text-[10px]"><i class="ph-bold ph-copy"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                    }
+                });
+            });
+            return html;
+        }
+
+        // --- 2. Dynamatic JSON Logic ---
+        function generateDynamaticJSON(sourceObj) {
+            const rules = sourceObj.rules || sourceObj.data_source.rules;
+            
+            const feed = {
+                "status": 200,
+                "message": "Converted via Tool",
+                "rule_feed": {
+                    "id": parseInt(sourceObj.id) || 999,
+                    "shop_url": "imported.myshopify.com",
+                    "name": sourceObj.name || "Converted Feed",
+                    "filter_out_stock_product": 0,
+                    "filter_out_stock_variant": 0,
+                    "filter_input_product": 0,
+                    "execution_filters": [],
+                    "rules": rules.map(transformRule)
+                }
+            };
+
+            document.getElementById('jsonOutput').value = JSON.stringify(feed, null, 4);
+            document.getElementById('dlBtn').removeAttribute('disabled');
         }
 
         function transformRule(r) {
             return {
                 "id": uuidv4(),
                 "isMatched": false,
-                "name": r.name || "Imported Rebuy Rule",
-                "logics": [
-                    // Dynamatic uses double array nesting for logics: [[ {block} ]]
-                    mapProductBlock(r.logic, "products", "contains")
-                ],
-                "returns": mapProductBlock(r.output, "specific-product", null) 
+                "name": r.name || "Rule",
+                "logics": [ mapBlock(r.logic, "products", "contains") ],
+                "returns": mapBlock(r.output, "specific-product", null)
             };
         }
 
-        function mapProductBlock(block, blockName, typeValue) {
-            let allProducts = [];
-
-            if (block && Array.isArray(block)) {
-                block.forEach(group => {
-                    // Rebuy structure varies: logic uses 'rules', output uses 'products'
-                    const subList = group.rules || (group.products ? [group] : []);
-                    
-                    subList.forEach(item => {
-                        if (item.products) {
-                            item.products.forEach(p => {
-                                allProducts.push(transformProduct(p));
-                            });
-                        }
+        function mapBlock(block, name, type) {
+            let products = [];
+            if(block && Array.isArray(block)) {
+                block.forEach(g => {
+                    const list = g.rules || (g.products ? [g] : []);
+                    list.forEach(i => {
+                        if(i.products) i.products.forEach(p => products.push(transformProduct(p)));
                     });
                 });
             }
-
-            if (allProducts.length === 0) return [];
-
-            // Return array of blocks (Dynamatic format)
-            return [{
-                "id": uuidv4(),
-                "name": blockName,
-                "type": typeValue, // 'contains' for logic, null for output
-                "value": allProducts
-            }];
+            if(products.length === 0) return [];
+            return [{ "id": uuidv4(), "name": name, "type": type, "value": products }];
         }
 
         function transformProduct(p) {
-            const meta = p.json || {}; 
-
+            const meta = p.json || {};
             return {
                 "product_id": String(p.product_id),
-                "product_title": meta.title || "Unknown Title",
+                "product_title": meta.title || "",
                 "product_handle": meta.handle || "",
                 "product_image": (meta.image && meta.image.src) ? meta.image.src : (typeof meta.image === 'string' ? meta.image : ""),
                 "product_variants": (meta.variants || []).map(v => ({
                     "variant_id": String(v.id),
-                    "variant_title": v.title || "Default Title",
-                    "variant_available": v.available !== false, 
+                    "variant_title": v.title || "",
+                    "variant_available": v.available !== false,
                     "variant_price": String(v.price || "0.00"),
                     "inventory_policy": v.inventory_policy || "DENY",
                     "inventory_quantity": v.inventory_quantity || 0,
@@ -211,30 +324,32 @@
             };
         }
 
-        // --- Actions ---
-        function copyOutput() {
-            const content = document.getElementById('outputArea').value;
-            if (!content) return;
-            navigator.clipboard.writeText(content).then(() => alert("Copied to clipboard!"));
+        function uuidv4() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+                const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+            });
         }
 
-        function downloadOutput() {
-            const content = document.getElementById('outputArea').value;
-            if (!content) return;
+        // --- Utilities ---
+        function copyToClip(text, label) {
+            navigator.clipboard.writeText(text).then(() => {
+                const t = document.getElementById('toast');
+                document.getElementById('toastMsg').innerText = `Copied ${label}!`;
+                t.classList.remove('translate-y-20', 'opacity-0');
+                setTimeout(() => t.classList.add('translate-y-20', 'opacity-0'), 1500);
+            });
+        }
 
-            const blob = new Blob([content], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
+        function downloadJSON() {
+            const content = document.getElementById('jsonOutput').value;
+            if(!content) return;
+            const blob = new Blob([content], {type: 'application/json'});
             const a = document.createElement('a');
-            
-            // Name the file nicely
-            a.href = url;
-            a.download = 'dynamatic_rules_import.json';
+            a.href = URL.createObjectURL(blob);
+            a.download = 'dynamatic_feed.json';
             document.body.appendChild(a);
             a.click();
-            
-            // Cleanup
             document.body.removeChild(a);
-            URL.revokeObjectURL(url);
         }
     </script>
 </body>
