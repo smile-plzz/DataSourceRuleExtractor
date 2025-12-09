@@ -3,68 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rebuy Rules to Table</title>
+    <title>Rebuy Migration Helper</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
     <style>
-        body { font-family: 'Inter', sans-serif; background: #f8fafc; }
-        .table-container { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border-radius: 8px; overflow: hidden; }
-        th { background-color: #1e293b; color: white; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; }
-        tr:nth-child(even) { background-color: #f1f5f9; }
-        tr:hover { background-color: #e2e8f0; }
-        td { vertical-align: top; }
-        .copy-btn { transition: all 0.2s; }
-        .copy-btn:active { transform: scale(0.95); }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        
+        /* Tooltip logic */
+        .copy-trigger { cursor: pointer; }
+        .copy-trigger:active { transform: scale(0.95); }
+        
+        /* Custom Table Styles */
+        .migration-table th { background: #1e293b; color: #fff; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em; padding: 12px 16px; }
+        .migration-table td { vertical-align: top; padding: 16px; border-bottom: 1px solid #e2e8f0; }
+        .migration-table tr:hover td { background-color: #f1f5f9; }
+        
+        /* Badge Styles */
+        .badge-logic { background: #eff6ff; color: #1d4ed8; border: 1px solid #dbeafe; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+        .badge-id { font-family: 'Courier New', monospace; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 11px; color: #64748b; }
     </style>
 </head>
-<body class="p-8 text-slate-800">
+<body class="p-6 md:p-10 text-slate-800">
 
-    <div class="max-w-7xl mx-auto">
+    <div class="max-w-[1400px] mx-auto">
         
-        <div class="flex justify-between items-center mb-8">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
             <div>
-                <h1 class="text-3xl font-bold text-slate-900">Rebuy Data Source Parser</h1>
-                <p class="text-slate-500 mt-1">Converts Rebuy JavaScript Source Code into a clean Table.</p>
+                <h1 class="text-3xl font-bold text-slate-900 flex items-center gap-3">
+                    <i class="ph-fill ph-arrows-left-right text-blue-600"></i>
+                    Rebuy Migration Helper
+                </h1>
+                <p class="text-slate-500 mt-1">Upload your Source Code to extract rules, IDs, and titles for migration.</p>
+            </div>
+            <div id="statusTag" class="hidden px-4 py-2 rounded-full text-sm font-bold bg-green-100 text-green-700 flex items-center gap-2">
+                <i class="ph-bold ph-check"></i> Ready
             </div>
         </div>
 
         <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-8">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="border-2 border-dashed border-slate-300 rounded-lg p-6 flex flex-col justify-center items-center hover:bg-slate-50 transition-colors cursor-pointer relative">
-                    <input type="file" id="fileInput" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                    <svg class="w-10 h-10 text-slate-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
-                    <span class="font-medium text-slate-600">Upload File (file.txt)</span>
-                </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <label class="border-2 border-dashed border-slate-300 rounded-lg h-40 flex flex-col justify-center items-center hover:bg-slate-50 transition-colors cursor-pointer group">
+                    <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                        <i class="ph ph-file-code text-3xl text-slate-400 group-hover:text-blue-500 mb-2 transition-colors"></i>
+                        <p class="mb-1 text-sm text-slate-500"><span class="font-semibold text-slate-700">Click to upload</span> file.txt / HTML</p>
+                        <p class="text-xs text-slate-400">Auto-detects data.data_source</p>
+                    </div>
+                    <input id="fileInput" type="file" class="hidden" />
+                </label>
 
-                <div class="relative">
-                    <textarea id="pasteInput" class="w-full h-32 p-3 border border-slate-300 rounded-lg text-xs font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Or paste your code here..."></textarea>
-                    <button onclick="processText()" class="absolute bottom-3 right-3 bg-blue-600 text-white px-4 py-1.5 rounded-md text-sm hover:bg-blue-700 transition-colors shadow-sm">Process Text</button>
-                </div>
-            </div>
-            <div id="status" class="mt-4 text-sm font-semibold text-center hidden"></div>
-        </div>
-
-        <div id="resultSection" class="hidden animate-fade-in">
-            <div class="flex justify-between items-end mb-4">
-                <h2 class="text-xl font-bold text-slate-800">Extracted Rules (<span id="ruleCount">0</span>)</h2>
-                <div class="flex gap-2">
-                     <button onclick="copyTable()" class="copy-btn bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-50 shadow-sm flex items-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
-                        Copy Table for Excel
+                <div class="relative h-40">
+                    <textarea id="pasteInput" class="w-full h-full p-4 border border-slate-300 rounded-lg text-xs font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none bg-slate-50" placeholder="Or paste the source code here..."></textarea>
+                    <button onclick="processText()" class="absolute bottom-3 right-3 bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-md text-sm font-medium transition-all shadow-sm">
+                        Process Text
                     </button>
                 </div>
             </div>
+        </div>
 
-            <div class="table-container bg-white">
-                <table class="min-w-full text-left text-sm" id="rulesTable">
+        <div id="outputSection" class="hidden bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse migration-table">
                     <thead>
                         <tr>
-                            <th class="p-4 w-16">#</th>
-                            <th class="p-4 w-1/2">IF (Trigger Product)</th>
-                            <th class="p-4 w-1/2">THEN (Output Product)</th>
+                            <th class="w-16">#</th>
+                            <th class="w-[40%]">
+                                <div class="flex items-center gap-2">
+                                    <i class="ph-bold ph-lightning text-yellow-400"></i> IF (Trigger Logic)
+                                </div>
+                            </th>
+                            <th class="w-[40%]">
+                                <div class="flex items-center gap-2">
+                                    <i class="ph-bold ph-gift text-green-400"></i> THEN (Return Items)
+                                </div>
+                            </th>
+                            <th class="w-[10%] text-right">Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="tableBody" class="divide-y divide-slate-100">
+                    <tbody id="rulesTableBody">
                         </tbody>
                 </table>
             </div>
@@ -72,155 +89,208 @@
 
     </div>
 
-    <script>
-        const statusEl = document.getElementById('status');
-        const tableBody = document.getElementById('tableBody');
-        const resultSection = document.getElementById('resultSection');
+    <div id="toast" class="fixed bottom-6 right-6 bg-slate-900 text-white px-4 py-3 rounded-lg shadow-xl translate-y-24 opacity-0 transition-all duration-300 flex items-center gap-3 z-50">
+        <i class="ph-fill ph-copy-simple text-green-400"></i>
+        <span id="toastMsg">Copied!</span>
+    </div>
 
-        // File Handler
-        document.getElementById('fileInput').addEventListener('change', (e) => {
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const pasteInput = document.getElementById('pasteInput');
+        const tableBody = document.getElementById('rulesTableBody');
+        const outputSection = document.getElementById('outputSection');
+        const statusTag = document.getElementById('statusTag');
+
+        // --- Event Listeners ---
+        fileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (!file) return;
-            setStatus('Reading file...', 'text-blue-600');
             const reader = new FileReader();
-            reader.onload = (event) => parseContent(event.target.result);
+            reader.onload = (ev) => processContent(ev.target.result);
             reader.readAsText(file);
         });
 
-        // Paste Handler
         function processText() {
-            const text = document.getElementById('pasteInput').value;
-            if (!text.trim()) return setStatus('Please paste code first', 'text-red-500');
-            parseContent(text);
+            const text = pasteInput.value;
+            if (!text.trim()) return alert("Please paste some text first.");
+            processContent(text);
         }
 
-        function setStatus(msg, color) {
-            statusEl.textContent = msg;
-            statusEl.className = `mt-4 text-sm font-semibold text-center block ${color}`;
-        }
-
-        // --- THE PARSING LOGIC ---
-        function parseContent(content) {
+        // --- Core Parsing Logic ---
+        function processContent(content) {
             try {
-                // 1. Find the start of the data.data_source object
-                // We assume the format: data.data_source = { ...
-                const marker = "data.data_source =";
-                const startIndex = content.indexOf(marker);
-
-                if (startIndex === -1) {
-                    throw new Error("Could not find 'data.data_source =' in the text. Make sure you pasted the full source code.");
-                }
-
-                // 2. Extract the object block using brace counting
-                // This is safer than Regex for nested structures
-                let braceCount = 0;
-                let foundStart = false;
-                let objectString = "";
-                let i = startIndex;
-
-                // Move i to the first '{'
-                while(i < content.length && content[i] !== '{') i++;
+                let dataSource = null;
                 
-                const jsonStartIndex = i;
-
-                for (; i < content.length; i++) {
-                    const char = content[i];
-                    if (char === '{') {
-                        braceCount++;
-                        foundStart = true;
-                    } else if (char === '}') {
-                        braceCount--;
+                // 1. Locate data.data_source
+                const marker = "data.data_source =";
+                const startIdx = content.indexOf(marker);
+                
+                if (startIdx === -1) {
+                    // Fallback: maybe they pasted just the object?
+                    try {
+                        dataSource = JSON.parse(content);
+                    } catch {
+                         // Fallback 2: Evaluated object
+                         try {
+                            dataSource = new Function("return " + content)();
+                         } catch (e) {
+                             throw new Error("Could not find 'data.data_source' block.");
+                         }
                     }
+                } else {
+                    // 2. Brace Counting Extraction
+                    let openCount = 0;
+                    let jsonStart = -1;
+                    let foundStart = false;
 
-                    if (foundStart && braceCount === 0) {
-                        // We found the closing brace for the main object
-                        objectString = content.substring(jsonStartIndex, i + 1);
-                        break;
+                    for (let i = startIdx; i < content.length; i++) {
+                        if (content[i] === '{') {
+                            if (!foundStart) { jsonStart = i; foundStart = true; }
+                            openCount++;
+                        } else if (content[i] === '}') {
+                            openCount--;
+                        }
+
+                        if (foundStart && openCount === 0) {
+                            const objStr = content.substring(jsonStart, i + 1);
+                            // Evaluate strictly
+                            dataSource = new Function("return " + objStr)();
+                            break;
+                        }
                     }
                 }
 
-                if (!objectString) throw new Error("Could not extract the data object. Check file integrity.");
-
-                // 3. Convert String to JS Object
-                // We use the Function constructor to evaluate the JS object string (handles unquoted keys)
-                // This is safe here because it runs in the client browser on data the user provided.
-                const dataObj = new Function("return " + objectString)();
-
-                if (!dataObj || !dataObj.rules) {
-                    throw new Error("Object extracted, but no 'rules' array found.");
+                if (!dataSource || (!dataSource.rules && !dataSource.data_source?.rules)) {
+                    throw new Error("No rules found in the extracted data.");
                 }
 
-                // 4. Render
-                renderTable(dataObj.rules);
-                setStatus(`Success! Found ${dataObj.rules.length} rules.`, 'text-green-600');
+                const rules = dataSource.rules || dataSource.data_source.rules;
+                renderTable(rules);
+                
+                statusTag.innerHTML = `<i class="ph-bold ph-check"></i> Found ${rules.length} Rules`;
+                statusTag.classList.remove('hidden');
 
             } catch (err) {
                 console.error(err);
-                setStatus(err.message, 'text-red-600');
+                alert("Error: " + err.message);
             }
         }
 
+        // --- Rendering Logic ---
         function renderTable(rules) {
             tableBody.innerHTML = '';
             
             rules.forEach((rule, index) => {
                 const tr = document.createElement('tr');
                 
-                // Get Inputs
-                let inputsHTML = '';
-                if(rule.logic) {
-                    rule.logic.forEach(l => {
-                        if(l.rules) l.rules.forEach(r => {
-                            if(r.products) r.products.forEach(p => {
-                                const title = p.json && p.json.title ? p.json.title : 'Unknown';
-                                const id = p.product_id;
-                                inputsHTML += `<div class="mb-2 pb-2 border-b border-slate-100 last:border-0">
-                                    <div class="font-semibold text-blue-700">${title}</div>
-                                    <div class="text-xs text-slate-400 font-mono">${id}</div>
-                                </div>`;
-                            });
-                        });
-                    });
-                }
-                if(!inputsHTML) inputsHTML = '<span class="italic text-slate-400">Any Product (Global Rule)</span>';
+                // 1. Logic Column (IF)
+                let logicHTML = '';
+                if (rule.logic) {
+                    rule.logic.forEach(group => {
+                        if (group.rules) {
+                            group.rules.forEach(r => {
+                                // Determine Rule Type
+                                const type = r.type || "Unknown Type";
+                                const operator = r.operator || "is";
+                                
+                                // Products inside logic?
+                                let itemsHTML = '';
+                                if (r.products) {
+                                    itemsHTML = r.products.map(p => generateCopyableItem(p)).join('');
+                                } else if (r.value) {
+                                    // Maybe it's a value rule like "Cart Total > 100"
+                                    itemsHTML = `<div class="mt-1 text-sm font-mono bg-slate-100 p-1 inline-block rounded">${r.value}</div>`;
+                                }
 
-                // Get Outputs
-                let outputsHTML = '';
-                if(rule.output) {
-                    rule.output.forEach(o => {
-                        if(o.products) o.products.forEach(p => {
-                            const title = p.json && p.json.title ? p.json.title : 'Unknown';
-                            const id = p.product_id;
-                            outputsHTML += `<div class="mb-2 pb-2 border-b border-slate-100 last:border-0">
-                                    <div class="font-semibold text-green-700">${title}</div>
-                                    <div class="text-xs text-slate-400 font-mono">${id}</div>
-                                </div>`;
-                        });
+                                logicHTML += `
+                                    <div class="mb-4 last:mb-0">
+                                        <div class="flex items-center gap-2 mb-2">
+                                            <span class="badge-logic">${type}</span>
+                                            <span class="text-xs text-slate-500 font-bold uppercase tracking-wider">${operator}</span>
+                                        </div>
+                                        <div class="pl-2 border-l-2 border-slate-200">
+                                            ${itemsHTML || '<span class="text-slate-400 text-xs italic">No specific products</span>'}
+                                        </div>
+                                    </div>`;
+                            });
+                        }
                     });
                 }
-                if(!outputsHTML) outputsHTML = '<span class="italic text-slate-400">No Return</span>';
+                if (!logicHTML) logicHTML = '<div class="text-slate-400 italic">Global Rule (Always Active)</div>';
+
+                // 2. Output Column (THEN)
+                let outputHTML = '';
+                if (rule.output) {
+                    rule.output.forEach(group => {
+                        // Products inside output?
+                        if (group.products) {
+                            outputHTML += group.products.map(p => generateCopyableItem(p)).join('');
+                        }
+                    });
+                }
+                if (!outputHTML) outputHTML = '<div class="text-slate-400 italic">No Actions</div>';
+
+                // 3. Raw Data Button
+                const ruleJSON = JSON.stringify(rule).replace(/"/g, '&quot;');
 
                 tr.innerHTML = `
-                    <td class="p-4 font-mono text-slate-500 font-bold">${index + 1}</td>
-                    <td class="p-4">${inputsHTML}</td>
-                    <td class="p-4 bg-slate-50">${outputsHTML}</td>
+                    <td class="font-mono text-slate-400 font-bold">#${index + 1}</td>
+                    <td>${logicHTML}</td>
+                    <td>${outputHTML}</td>
+                    <td class="text-right">
+                        <button onclick="copyText('${ruleJSON}', 'Full Rule JSON')" class="text-xs font-semibold text-slate-500 hover:text-blue-600 bg-white border border-slate-200 hover:border-blue-300 px-3 py-1.5 rounded transition-colors" title="Copy Raw JSON">
+                            <i class="ph-bold ph-code"></i> JSON
+                        </button>
+                    </td>
                 `;
                 tableBody.appendChild(tr);
             });
 
-            document.getElementById('ruleCount').innerText = rules.length;
-            resultSection.classList.remove('hidden');
+            outputSection.classList.remove('hidden');
         }
 
-        function copyTable() {
-            // Simple clipboard copy for table data suitable for Excel
-            const range = document.createRange();
-            range.selectNode(document.getElementById('rulesTable'));
-            window.getSelection().removeAllRanges();
-            window.getSelection().addRange(range);
-            document.execCommand('copy');
-            window.getSelection().removeAllRanges();
-            alert("Table copied! You can now paste into Excel.");
+        // --- Helper: Generate Copyable Product Block ---
+        function generateCopyableItem(p) {
+            const title = p.json?.title || "Unknown Product";
+            const id = p.product_id;
+            const img = p.json?.image?.src || null;
+
+            // Safe strings for onclick
+            const safeTitle = title.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+
+            return `
+                <div class="flex items-start gap-3 mb-2 p-2 rounded hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-100 transition-all group">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="font-medium text-slate-700 text-sm">${title}</span>
+                            <button onclick="copyText('${safeTitle}', 'Product Title')" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-blue-600 transition-opacity" title="Copy Name">
+                                <i class="ph-bold ph-copy"></i>
+                            </button>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="badge-id">${id}</span>
+                            <button onclick="copyText('${id}', 'Product ID')" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-blue-600 transition-opacity" title="Copy ID">
+                                <i class="ph-bold ph-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- Clipboard Logic ---
+        function copyText(text, label) {
+            navigator.clipboard.writeText(text).then(() => {
+                const toast = document.getElementById('toast');
+                const msg = document.getElementById('toastMsg');
+                
+                msg.innerText = `Copied ${label}!`;
+                toast.classList.remove('translate-y-24', 'opacity-0');
+                
+                setTimeout(() => {
+                    toast.classList.add('translate-y-24', 'opacity-0');
+                }, 2000);
+            });
         }
     </script>
 </body>
