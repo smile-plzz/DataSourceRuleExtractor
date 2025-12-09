@@ -3,209 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rebuy Rule Extractor</title>
+    <title>Rebuy HTML Rule Extractor</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-        pre { white-space: pre-wrap; word-wrap: break-word; }
-        .rule-card { transition: all 0.2s; }
-        .rule-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen text-gray-800">
+<body class="bg-slate-50 text-slate-800 min-h-screen font-sans">
 
-    <div class="max-w-5xl mx-auto p-8">
+    <div class="max-w-5xl mx-auto p-6 md:p-12">
         
-        <div class="mb-8 text-center">
-            <h1 class="text-4xl font-bold text-gray-900 mb-2">Rebuy Rule Extractor</h1>
-            <p class="text-gray-500">Upload your Data Source file (HTML or JSON) to extract readable rules.</p>
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-slate-900 mb-2 flex items-center gap-3">
+                <i class="ph ph-magic-wand text-blue-600"></i>
+                Rebuy Rule Extractor
+            </h1>
+            <p class="text-slate-500">Upload the <strong>Rebuy Page HTML</strong> file you just saved. We will find the hidden rules inside.</p>
         </div>
 
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 mb-8 transition-all" id="dropZone">
-            <div class="flex flex-col items-center justify-center w-full">
-                <label for="fileInput" class="flex flex-col items-center justify-center w-full h-40 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
-                    <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                        <i class="ph ph-file-code text-4xl text-gray-400 mb-3"></i>
-                        <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Click to upload</span> or drag and drop</p>
-                        <p class="text-xs text-gray-500">Supports .txt, .html, .json</p>
-                    </div>
-                    <input id="fileInput" type="file" class="hidden" />
-                </label>
-            </div>
-            <div id="statusMsg" class="mt-4 text-center text-sm font-medium text-blue-600 hidden"></div>
+        <div class="bg-white p-8 rounded-xl shadow-sm border border-slate-200 mb-8 transition-colors hover:border-blue-300" id="dropZone">
+            <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-300 border-dashed rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100">
+                <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                    <i class="ph ph-upload-simple text-3xl text-slate-400 mb-2"></i>
+                    <p class="mb-1 text-sm text-slate-500"><span class="font-semibold">Click to upload</span> your 'file.txt' or '.html'</p>
+                </div>
+                <input id="fileInput" type="file" class="hidden" accept=".txt,.html,.json" />
+            </label>
+            <div id="status" class="mt-4 text-center text-sm font-medium hidden"></div>
         </div>
 
-        <div id="toolbar" class="hidden flex justify-between items-center mb-4">
-            <div class="text-sm text-gray-600">
-                Found <span id="ruleCount" class="font-bold text-gray-900">0</span> rules
+        <div id="outputContainer" class="hidden animate-fade-in-up">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                    Found <span id="ruleCount" class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-sm">0</span> Rules
+                </h2>
+                <div class="flex gap-2">
+                    <button onclick="copyToClipboard('readable')" class="flex items-center gap-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-3 py-1.5 rounded-md text-sm transition-all shadow-sm">
+                        <i class="ph ph-text-aa"></i> Copy Text
+                    </button>
+                    <button onclick="copyToClipboard('csv')" class="flex items-center gap-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-3 py-1.5 rounded-md text-sm transition-all shadow-sm">
+                        <i class="ph ph-table"></i> Copy CSV
+                    </button>
+                </div>
             </div>
-            <div class="flex gap-3">
-                <button onclick="copyToClipboard('text')" class="flex items-center gap-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                    <i class="ph ph-copy"></i> Copy as Text
-                </button>
-                <button onclick="copyToClipboard('csv')" class="flex items-center gap-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                    <i class="ph ph-file-csv"></i> Copy as CSV
-                </button>
-            </div>
+
+            <div id="rulesList" class="space-y-3 mb-6 max-h-[500px] overflow-y-auto custom-scrollbar p-1">
+                </div>
+            
+            <textarea id="copySource" class="hidden"></textarea>
         </div>
-
-        <div id="outputArea" class="space-y-4 hidden">
-            </div>
-
-        <textarea id="copySource" class="hidden"></textarea>
     </div>
 
-    <div id="toast" class="fixed bottom-5 right-5 bg-gray-900 text-white px-6 py-3 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 flex items-center gap-3">
-        <i class="ph ph-check-circle text-green-400 text-xl"></i>
-        <span id="toastMsg">Copied to clipboard!</span>
+    <div id="toast" class="fixed bottom-6 right-6 bg-slate-800 text-white px-4 py-2 rounded shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none z-50">
+        Copied to clipboard!
     </div>
 
     <script>
+        // --- Core Logic ---
         const fileInput = document.getElementById('fileInput');
-        const outputArea = document.getElementById('outputArea');
-        const statusMsg = document.getElementById('statusMsg');
-        const toolbar = document.getElementById('toolbar');
-        const ruleCountSpan = document.getElementById('ruleCount');
-        const copySource = document.getElementById('copySource');
+        const status = document.getElementById('status');
+        const outputContainer = document.getElementById('outputContainer');
+        const rulesList = document.getElementById('rulesList');
+        const ruleCount = document.getElementById('ruleCount');
 
-        let extractedRules = [];
+        let globalRules = [];
 
-        fileInput.addEventListener('change', handleFile);
-
-        function handleFile(e) {
+        fileInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
 
-            statusMsg.textContent = `Reading ${file.name}...`;
-            statusMsg.classList.remove('hidden');
+            status.textContent = "Scanning file for Rebuy data...";
+            status.className = "mt-4 text-center text-sm font-medium text-blue-600 block";
             
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                try {
-                    const content = event.target.result;
-                    processContent(content);
-                } catch (err) {
-                    showError("Failed to parse file. Ensure it contains Rebuy data source code.");
-                    console.error(err);
-                }
-            };
-            reader.readAsText(file);
-        }
+            const text = await file.text();
+            processRebuyFile(text);
+        });
 
-        function processContent(content) {
+        function processRebuyFile(content) {
             let dataSource = null;
 
-            // 1. Try finding the specific Rebuy data_source assignment in the text
-            // Look for: data.data_source = { ... };
-            const regex = /data\.data_source\s*=\s*(\{[\s\S]*?\});?\s*(\n|app\.service|$)/;
-            const match = content.match(regex);
+            // STRATEGY 1: Look for the specific "data.data_source =" assignment common in Rebuy HTML
+            // We use a regex that captures the JSON object assigned to data.data_source
+            const regexDataSource = /data\.data_source\s*=\s*(\{[\s\S]*?\});/;
+            const match1 = content.match(regexDataSource);
 
-            if (match && match[1]) {
-                try {
-                    // Start parsing extracted string
-                    dataSource = JSON.parse(match[1]);
-                } catch (e) {
-                    console.warn("Regex match found but JSON parse failed. Trying loose extraction.");
+            // STRATEGY 2: Look for just "data =" (sometimes used in different versions)
+            const regexDataGeneric = /data\s*=\s*(\{[\s\S]*?"rules"[\s\S]*?\});/;
+            const match2 = content.match(regexDataGeneric);
+
+            try {
+                if (match1 && match1[1]) {
+                    dataSource = JSON.parse(match1[1]);
+                } else if (match2 && match2[1]) {
+                    dataSource = JSON.parse(match2[1]);
+                } else {
+                    // STRATEGY 3: Try parsing the whole file as JSON (if user uploaded just the API response)
+                    dataSource = JSON.parse(content);
                 }
+            } catch (err) {
+                console.error("JSON Parse Error", err);
             }
 
-            // 2. If regex failed, try parsing the whole file as JSON
-            if (!dataSource) {
-                try {
-                    const json = JSON.parse(content);
-                    // Check if it's the full object or just the data_source
-                    dataSource = json.data_source || json; 
-                } catch (e) {
-                    // Not valid JSON
-                }
-            }
-
-            if (!dataSource || !dataSource.rules) {
-                showError("Could not find 'data.data_source' or 'rules' in this file.");
+            // Validation
+            if (!dataSource || (!dataSource.rules && !dataSource.data_source?.rules)) {
+                status.textContent = "Could not find 'rules' in this file. Make sure it's a Rebuy Data Source file.";
+                status.className = "mt-4 text-center text-sm font-medium text-red-500 block";
                 return;
             }
 
-            // Success
-            statusMsg.textContent = "Successfully parsed rules!";
-            statusMsg.classList.remove("text-red-600");
-            statusMsg.classList.add("text-green-600");
+            // Normalize structure (sometimes rules are nested)
+            const rules = dataSource.rules || dataSource.data_source.rules;
             
-            renderRules(dataSource.rules);
+            status.textContent = "Success! Rules extracted.";
+            status.className = "mt-4 text-center text-sm font-medium text-green-600 block";
+            
+            displayRules(rules);
         }
 
-        function renderRules(rules) {
-            outputArea.innerHTML = '';
-            extractedRules = [];
+        function displayRules(rules) {
+            globalRules = []; // Reset
+            rulesList.innerHTML = '';
 
-            if (!rules.length) {
-                outputArea.innerHTML = '<div class="text-center text-gray-500 py-10">No rules found in this data source.</div>';
+            if (rules.length === 0) {
+                rulesList.innerHTML = '<div class="text-center text-slate-400 italic">No rules found in this data source.</div>';
                 return;
             }
 
             rules.forEach((rule, index) => {
-                const ruleData = parseRule(rule);
-                extractedRules.push(ruleData);
-                
+                const parsed = parseSingleRule(rule);
+                globalRules.push(parsed);
+
+                // Create UI Card
                 const card = document.createElement('div');
-                card.className = "rule-card bg-white p-6 rounded-lg border border-gray-200";
+                card.className = "bg-white p-4 rounded-lg border border-slate-200 shadow-sm text-sm";
                 
-                // Build HTML for Inputs
-                let inputsHtml = ruleData.inputs.map(p => 
-                    `<div class="flex items-start gap-3 mb-2">
-                        <span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded mt-1">IF</span>
-                        <div>
-                            <div class="font-medium text-gray-900">${p.title}</div>
-                            <div class="text-xs text-gray-500 font-mono">ID: ${p.id}</div>
-                        </div>
-                    </div>`
-                ).join('');
+                let inputs = parsed.inputs.map(i => `<span class="inline-block bg-blue-50 text-blue-700 border border-blue-100 rounded px-2 py-0.5 mr-2 mb-1">IF ${i.name} (${i.id})</span>`).join('');
+                if(!inputs) inputs = `<span class="text-slate-400 italic">IF Anything</span>`;
 
-                if(ruleData.inputs.length === 0) inputsHtml = `<div class="text-gray-400 italic">No input conditions (Always Matches)</div>`;
-
-                // Build HTML for Outputs
-                let outputsHtml = ruleData.outputs.map(p => 
-                    `<div class="flex items-start gap-3 mb-2">
-                        <span class="bg-green-100 text-green-800 text-xs font-bold px-2 py-1 rounded mt-1">RETURN</span>
-                        <div>
-                            <div class="font-medium text-gray-900">${p.title}</div>
-                            <div class="text-xs text-gray-500 font-mono">ID: ${p.id}</div>
-                        </div>
-                    </div>`
-                ).join('');
-
-                if(ruleData.outputs.length === 0) outputsHtml = `<div class="text-gray-400 italic">No return products</div>`;
+                let outputs = parsed.outputs.map(o => `<span class="inline-block bg-green-50 text-green-700 border border-green-100 rounded px-2 py-0.5 mr-2 mb-1">RETURN ${o.name} (${o.id})</span>`).join('');
+                if(!outputs) outputs = `<span class="text-slate-400 italic">RETURN Nothing</span>`;
 
                 card.innerHTML = `
-                    <div class="flex flex-col md:flex-row gap-6">
-                        <div class="flex-1 border-r border-gray-100 pr-4">
-                            ${inputsHtml}
-                        </div>
-                        <div class="flex-1 pl-2">
-                            ${outputsHtml}
-                        </div>
-                    </div>
+                    <div class="font-bold text-slate-400 text-xs mb-2 uppercase tracking-wider">Rule #${index + 1}</div>
+                    <div class="mb-2">${inputs}</div>
+                    <div class="border-t border-slate-100 pt-2">${outputs}</div>
                 `;
-                outputArea.appendChild(card);
+                rulesList.appendChild(card);
             });
 
-            ruleCountSpan.innerText = rules.length;
-            outputArea.classList.remove('hidden');
-            toolbar.classList.remove('hidden');
+            ruleCount.innerText = rules.length;
+            outputContainer.classList.remove('hidden');
         }
 
-        function parseRule(rule) {
-            // Extract Logic (Inputs)
+        function parseSingleRule(rule) {
             const inputs = [];
+            const outputs = [];
+
+            // Parse Inputs (IF conditions)
             if (rule.logic) {
-                rule.logic.forEach(logicGroup => {
-                    if (logicGroup.rules) {
-                        logicGroup.rules.forEach(r => {
+                rule.logic.forEach(group => {
+                    if (group.rules) {
+                        group.rules.forEach(r => {
                             if (r.products) {
                                 r.products.forEach(p => {
                                     inputs.push({
                                         id: p.product_id,
-                                        title: p.json && p.json.title ? p.json.title : 'Unknown Product'
+                                        name: p.json?.title || "Unknown Product"
                                     });
                                 });
                             }
@@ -214,15 +181,14 @@
                 });
             }
 
-            // Extract Output (Returns)
-            const outputs = [];
+            // Parse Outputs (RETURN actions)
             if (rule.output) {
                 rule.output.forEach(out => {
                     if (out.products) {
                         out.products.forEach(p => {
                             outputs.push({
                                 id: p.product_id,
-                                title: p.json && p.json.title ? p.json.title : 'Unknown Product'
+                                name: p.json?.title || "Unknown Product"
                             });
                         });
                     }
@@ -233,54 +199,30 @@
         }
 
         function copyToClipboard(format) {
-            let textToCopy = "";
-
+            let text = "";
+            
             if (format === 'csv') {
-                textToCopy = "Rule Number,Type,Product Title,Product ID\n";
-                extractedRules.forEach((rule, idx) => {
-                    const num = idx + 1;
-                    rule.inputs.forEach(i => {
-                        textToCopy += `${num},IF,"${i.title.replace(/"/g, '""')}",${i.id}\n`;
-                    });
-                    rule.outputs.forEach(o => {
-                        textToCopy += `${num},RETURN,"${o.title.replace(/"/g, '""')}",${o.id}\n`;
-                    });
+                text = "Rule #,Type,Product Name,Product ID\n";
+                globalRules.forEach((r, i) => {
+                    r.inputs.forEach(input => text += `${i+1},IF,"${input.name.replace(/"/g, '""')}",${input.id}\n`);
+                    r.outputs.forEach(output => text += `${i+1},RETURN,"${output.name.replace(/"/g, '""')}",${output.id}\n`);
                 });
             } else {
-                extractedRules.forEach((rule, idx) => {
-                    textToCopy += `RULE ${idx + 1}:\n`;
-                    if (rule.inputs.length) {
-                        rule.inputs.forEach(i => textToCopy += `  IF: ${i.title} (${i.id})\n`);
-                    } else {
-                        textToCopy += `  IF: Anything\n`;
-                    }
-                    if (rule.outputs.length) {
-                        rule.outputs.forEach(o => textToCopy += `  RETURN: ${o.title} (${o.id})\n`);
-                    } else {
-                        textToCopy += `  RETURN: Nothing\n`;
-                    }
-                    textToCopy += "\n";
+                globalRules.forEach((r, i) => {
+                    text += `RULE ${i+1}\n`;
+                    r.inputs.forEach(input => text += `  IF: ${input.name} (${input.id})\n`);
+                    if(r.inputs.length === 0) text += `  IF: Anything\n`;
+                    
+                    r.outputs.forEach(output => text += `  THEN RETURN: ${output.name} (${output.id})\n`);
+                    text += "\n";
                 });
             }
 
-            navigator.clipboard.writeText(textToCopy).then(() => {
-                showToast(`Copied ${format.toUpperCase()} to clipboard!`);
+            navigator.clipboard.writeText(text).then(() => {
+                const toast = document.getElementById('toast');
+                toast.classList.remove('translate-y-20', 'opacity-0');
+                setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 2000);
             });
-        }
-
-        function showToast(msg) {
-            const toast = document.getElementById('toast');
-            document.getElementById('toastMsg').innerText = msg;
-            toast.classList.remove('translate-y-20', 'opacity-0');
-            setTimeout(() => {
-                toast.classList.add('translate-y-20', 'opacity-0');
-            }, 2500);
-        }
-
-        function showError(msg) {
-            statusMsg.textContent = msg;
-            statusMsg.classList.remove('hidden', 'text-green-600');
-            statusMsg.classList.add('text-red-600');
         }
     </script>
 </body>
