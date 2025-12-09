@@ -28,42 +28,66 @@
         .tab-active { border-bottom: 2px solid #2563eb; color: #2563eb; font-weight: 600; }
         .tab-inactive { border-bottom: 2px solid transparent; color: #64748b; }
         .tab-inactive:hover { color: #334155; }
+
+        /* Slider Transitions */
+        .slider-panel { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .slider-open { transform: translateX(0); }
+        .slider-closed { transform: translateX(-100%); }
     </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden text-slate-800">
 
-    <div class="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center flex-shrink-0">
-        <div>
-            <h1 class="text-xl font-bold text-slate-900 flex items-center gap-2">
-                <i class="ph-fill ph-toolbox text-blue-600"></i>
-                Rebuy Master Migration Tool
-            </h1>
-            <p class="text-xs text-slate-500">View Rules, Copy Data, and Export to Dynamatic</p>
+    <div class="bg-white border-b border-slate-200 px-6 py-3 flex justify-between items-center flex-shrink-0 z-40 relative">
+        <div class="flex items-center gap-4">
+            <button onclick="toggleSlider()" class="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-md text-sm font-bold transition-colors border border-slate-300">
+                <i class="ph-bold ph-list"></i> Input Source
+            </button>
+
+            <div>
+                <h1 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    Rebuy Master Migration Tool
+                </h1>
+            </div>
         </div>
+        
         <div id="statusTag" class="hidden px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold items-center gap-1">
             <i class="ph-bold ph-check"></i> Data Loaded
         </div>
     </div>
 
-    <div class="flex-1 flex overflow-hidden">
+    <div class="flex-1 relative flex overflow-hidden">
         
-        <div class="w-1/3 min-w-[350px] max-w-[500px] bg-white border-r border-slate-200 flex flex-col z-20 shadow-lg">
-            <div class="p-4 border-b border-slate-100 bg-slate-50">
-                <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">1. Input Source</h2>
+        <div id="inputSlider" class="slider-panel slider-open absolute top-0 left-0 h-full w-[450px] bg-white border-r border-slate-200 flex flex-col z-50 shadow-2xl">
+            
+            <div class="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500">1. Input Source</h2>
+                <button onclick="toggleSlider()" class="text-slate-400 hover:text-slate-700 p-1 rounded-full hover:bg-slate-200 transition-colors">
+                    <i class="ph-bold ph-x text-lg"></i>
+                </button>
+            </div>
+
+            <div class="p-4 bg-slate-50 border-b border-slate-100">
                 <div class="flex gap-2 mb-2">
-                    <label class="flex-1 cursor-pointer bg-white border border-slate-300 hover:border-blue-400 rounded px-3 py-2 text-center text-xs font-medium transition-colors">
+                    <label class="flex-1 cursor-pointer bg-white border border-slate-300 hover:border-blue-400 rounded px-3 py-2 text-center text-xs font-medium transition-colors shadow-sm">
                         <input type="file" id="fileInput" class="hidden" />
                         <i class="ph-bold ph-upload-simple"></i> Upload File
                     </label>
-                    <button onclick="processInput()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded px-3 py-2 text-xs font-bold transition-colors">
+                    <button onclick="processInput()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded px-3 py-2 text-xs font-bold transition-colors shadow-sm">
                         <i class="ph-bold ph-play"></i> Process
                     </button>
                 </div>
             </div>
-            <textarea id="pasteInput" class="flex-1 p-4 text-xs font-mono resize-none focus:outline-none bg-slate-50 text-slate-600" placeholder="Paste source code here..."></textarea>
+
+            <textarea id="pasteInput" class="flex-1 p-4 text-xs font-mono resize-none focus:outline-none bg-slate-50 text-slate-600 border-none" placeholder="Paste source code here..."></textarea>
+            
+            <div class="p-3 text-[10px] text-slate-400 text-center bg-slate-50 border-t border-slate-100">
+                Paste file.txt content or upload file
+            </div>
         </div>
 
-        <div class="flex-1 flex flex-col bg-slate-50 min-w-0">
+        <div id="sliderBackdrop" onclick="toggleSlider()" class="absolute inset-0 bg-slate-900/20 z-40 hidden transition-opacity"></div>
+
+        <div class="flex-1 flex flex-col bg-slate-50 min-w-0 w-full h-full">
             
             <div class="flex border-b border-slate-200 bg-white px-4">
                 <button onclick="switchTab('table')" id="btn-tab-table" class="tab-active px-4 py-3 text-sm flex items-center gap-2">
@@ -85,7 +109,12 @@
                             </tr>
                         </thead>
                         <tbody id="tableBody">
-                            <tr><td colspan="3" class="text-center p-8 text-slate-400 italic">Waiting for data...</td></tr>
+                            <tr><td colspan="3" class="text-center p-12 text-slate-400 italic">
+                                <div class="flex flex-col items-center gap-3">
+                                    <i class="ph-duotone ph-arrow-bend-up-left text-3xl"></i>
+                                    <span>Open the Input Source slider to begin</span>
+                                </div>
+                            </td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -104,15 +133,33 @@
         </div>
     </div>
 
-    <div id="toast" class="fixed bottom-6 right-6 bg-slate-800 text-white px-4 py-2 rounded shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none z-50 text-xs font-bold flex items-center gap-2">
+    <div id="toast" class="fixed bottom-6 right-6 bg-slate-800 text-white px-4 py-2 rounded shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none z-[60] text-xs font-bold flex items-center gap-2">
         <i class="ph-bold ph-check"></i> <span id="toastMsg">Copied!</span>
     </div>
 
     <script>
+        // --- Slider Logic ---
+        const slider = document.getElementById('inputSlider');
+        const backdrop = document.getElementById('sliderBackdrop');
+        let isSliderOpen = true;
+
+        function toggleSlider() {
+            isSliderOpen = !isSliderOpen;
+            if (isSliderOpen) {
+                slider.classList.remove('slider-closed');
+                slider.classList.add('slider-open');
+                backdrop.classList.remove('hidden');
+            } else {
+                slider.classList.remove('slider-open');
+                slider.classList.add('slider-closed');
+                backdrop.classList.add('hidden');
+            }
+        }
+
         // --- State ---
         let currentData = null;
 
-        // --- UI Logic ---
+        // --- Tabs ---
         function switchTab(tab) {
             document.getElementById('view-table').classList.toggle('hidden', tab !== 'table');
             document.getElementById('view-json').classList.toggle('hidden', tab !== 'json');
@@ -184,6 +231,9 @@
                 
                 document.getElementById('statusTag').classList.remove('hidden');
                 document.getElementById('statusTag').classList.add('flex');
+                
+                // Auto-close slider on success for better view
+                if(isSliderOpen) toggleSlider();
 
             } catch (err) {
                 console.error(err);
